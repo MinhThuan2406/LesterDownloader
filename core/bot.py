@@ -7,9 +7,16 @@ from discord.ext import commands, tasks
 import asyncio
 import logging
 import os
+import ssl
 import time
 from pathlib import Path
 from typing import List, Optional
+
+try:
+    import certifi
+    ssl_context = ssl.create_default_context(cafile=certifi.where())
+except ImportError:
+    ssl_context = None
 
 from .config import BotConfig
 from .logging import get_logger
@@ -38,11 +45,30 @@ class LesterBot(commands.Bot):
         self.start_time = None
         self.download_path = Path(config.DOWNLOAD_PATH)
         
+        # Configure SSL context if using MSYS2 Python
+        if ssl_context:
+            logger.info("Using certifi SSL certificates for Discord connection")
+        
         # Setup event handlers
         self.setup_events()
         
         # Start cleanup task
         self.cleanup_old_files.start()
+    
+    async def setup_hook(self):
+        """Setup hook called before the bot starts"""
+        # Configure SSL context for Discord API if using MSYS2 Python
+        if ssl_context:
+            import aiohttp
+            # Close existing session if any
+            if hasattr(self.http, '_HTTPClient__session') and self.http._HTTPClient__session:
+                await self.http._HTTPClient__session.close()
+            
+            # Create new connector with SSL context
+            connector = aiohttp.TCPConnector(ssl=ssl_context)
+            # Create new session with the connector
+            self.http._HTTPClient__session = aiohttp.ClientSession(connector=connector)
+            logger.info("Discord HTTP client configured with certifi SSL context")
     
     def setup_events(self):
         """Setup bot event handlers"""

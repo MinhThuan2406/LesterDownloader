@@ -41,8 +41,9 @@ class BaseCommand(commands.Cog):
         try:
             message = await ctx.send(embed=embed)
             
-            if auto_delete:
-                await self.schedule_auto_delete(message, delete_delay)
+            # Auto-deletion feature disabled
+            # if auto_delete:
+            #     await self.schedule_auto_delete(message, delete_delay)
             
             return message
             

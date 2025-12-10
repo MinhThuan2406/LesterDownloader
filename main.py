@@ -13,8 +13,8 @@ sys.path.insert(0, str(project_root))
 from core.bot import LesterBot
 from core.config import BotConfig
 from core.logging import setup_logging
-from health_check import HealthCheckServer
-from shutdown_handler import ShutdownHandler
+from core.health_check import HealthCheckServer
+from core.shutdown_handler import ShutdownHandler
 
 async def main():
     """Main function to run the bot"""

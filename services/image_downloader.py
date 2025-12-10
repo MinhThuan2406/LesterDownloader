@@ -32,7 +32,7 @@ class ImageDownloader:
         """Get the platform from URL"""
         return PlatformDetector.get_platform(url)
     
-    async def download_image(self, url: str) -> Tuple[Optional[str], str]:
+    async def download_image(self, url: str) -> Tuple[Optional[str], str, Optional[str]]:
         """
         Download image from supported platforms
         
@@ -40,10 +40,10 @@ class ImageDownloader:
             url: Image URL
             
         Returns:
-            Tuple of (filepath, title/error_message)
+            Tuple of (filepath, title, error_message)
         """
         if not self.is_supported_url(url):
-            return None, "Unsupported image platform"
+            return None, "Unknown", "Unsupported image platform"
         
         platform = self.get_platform(url)
         logger.info(f"Downloading image from {platform}: {url}")
@@ -122,7 +122,7 @@ class ImageDownloader:
                 info = await asyncio.to_thread(ydl.extract_info, url, download=False)
                 
                 if not info:
-                    return None, "Could not extract image information"
+                    return None, "Unknown", "Could not extract image information"
                 
                 # Download the image
                 await asyncio.to_thread(ydl.download, [url])
@@ -132,19 +132,19 @@ class ImageDownloader:
                 
                 # Check if file exists and get its size
                 if not os.path.exists(filename):
-                    return None, "Download failed - file not found"
+                    return None, "Unknown", "Download failed - file not found"
                 
                 file_size = os.path.getsize(filename)
                 if file_size > self.max_file_size:
                     # Clean up large file
                     os.remove(filename)
-                    return None, f"Image too large ({file_size // 1024 // 1024}MB > 8MB)"
+                    return None, "Unknown", f"Image too large ({file_size // 1024 // 1024}MB > 8MB)"
                 
                 title = info.get('title', 'Unknown Title')
                 # Clean title for filename
                 title = re.sub(r'[<>:"/\\|?*]', '', title)[:100]
                 
-                return filename, title
+                return filename, title, None
                 
         except yt_dlp.DownloadError as e:
             error_msg = str(e)
@@ -152,14 +152,14 @@ class ImageDownloader:
             
             # Provide more specific error messages for Facebook
             if platform == 'facebook' and 'No video formats found' in error_msg:
-                return None, "Facebook content extraction failed. The post may be private, deleted, or require authentication."
+                return None, "Unknown", "Facebook content extraction failed. The post may be private, deleted, or require authentication."
             elif platform == 'facebook':
-                return None, f"Facebook download failed: {error_msg}"
+                return None, "Unknown", f"Facebook download failed: {error_msg}"
             else:
-                return None, f"Download failed: {error_msg}"
+                return None, "Unknown", f"Download failed: {error_msg}"
         except Exception as e:
             logger.error(f"Unexpected error downloading {url}: {e}")
-            return None, f"Unexpected error: {str(e)}"
+            return None, "Unknown", f"Unexpected error: {str(e)}"
     
     async def cleanup_file(self, filepath: str):
         """Clean up downloaded file"""

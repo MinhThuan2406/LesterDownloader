@@ -1,8 +1,23 @@
-discord.py==2.5.2
-yt-dlp==2025.7.21
-requests==2.32.4
-python-dotenv==1.1.1
-aiosqlite==0.20.0
-aiofiles==24.1.0
-urllib3==2.2.2
-aiohttp==3.9.1
+# Discord Bot Framework
+discord.py>=2.5.2
+
+# Video/Audio Downloading
+yt-dlp>=2025.12.8
+
+# HTTP and Networking
+requests>=2.32.4
+aiohttp>=3.9.1
+urllib3>=2.2.2
+certifi>=2024.12.14
+
+# Environment and Configuration
+python-dotenv>=1.1.1
+
+# Async File Operations
+aiosqlite>=0.20.0
+aiofiles>=24.1.0
+
+# Additional dependencies (auto-installed with above, listed for completeness)
+# - pycryptodome (for yt-dlp)
+# - brotli (for better compression support)
+# - websockets (for discord.py)

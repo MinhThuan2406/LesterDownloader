@@ -32,20 +32,15 @@ class AutoDeleteSettings:
     MIN_DELAY: int = 30  # Minimum auto-delete delay (30 seconds)
     MAX_DELAY: int = 1800  # Maximum auto-delete delay (30 minutes)
 
-@dataclass
 class QualityPresets:
     """Video quality presets"""
-    VALID_QUALITIES: list = None
-    DEFAULT_QUALITY: str = 'best[height<=720]'
-    DISCORD_FRIENDLY: str = 'small'
-    
-    def __post_init__(self):
-        if self.VALID_QUALITIES is None:
-            self.VALID_QUALITIES = [
-                'best', 'worst', 'small',
-                'best[height<=720]', 'best[height<=480]', 'best[height<=360]',
-                '720p', '480p', '360p'
-            ]
+    VALID_QUALITIES = [
+        'best', 'worst', 'small',
+        'best[height<=720]', 'best[height<=480]', 'best[height<=360]',
+        '720p', '480p', '360p'
+    ]
+    DEFAULT_QUALITY = 'best[height<=720]'
+    DISCORD_FRIENDLY = 'small'
 
 @dataclass
 class DatabaseLimits:

@@ -187,14 +187,14 @@ class DownloadQueue:
             if content_type in ['image', 'gallery']:
                 # Try image download first
                 logger.info(f"Attempting image download for {content_type}: {request.url}")
-                filename, title = await self.image_downloader.download_image(request.url)
+                filename, title, error = await self.image_downloader.download_image(request.url)
                 if filename:
                     downloader = self.image_downloader
                     final_content_type = content_type
                 else:
                     # Fallback to video if image fails
                     logger.info(f"Image download failed, trying video: {request.url}")
-                    filename, title = await self.video_downloader.download_video(request.url, request.quality)
+                    filename, title, error = await self.video_downloader.download_video(request.url, request.quality)
                     if filename:
                         downloader = self.video_downloader
                         final_content_type = 'video'
@@ -202,14 +202,14 @@ class DownloadQueue:
             elif content_type in ['video', 'reel', 'story']:
                 # Try video download
                 logger.info(f"Attempting video download for {content_type}: {request.url}")
-                filename, title = await self.video_downloader.download_video(request.url, request.quality)
+                filename, title, error = await self.video_downloader.download_video(request.url, request.quality)
                 if filename:
                     downloader = self.video_downloader
                     final_content_type = content_type
                 else:
                     # Fallback to image if video fails
                     logger.info(f"Video download failed, trying image: {request.url}")
-                    filename, title = await self.image_downloader.download_image(request.url)
+                    filename, title, error = await self.image_downloader.download_image(request.url)
                     if filename:
                         downloader = self.image_downloader
                         final_content_type = 'image'
@@ -217,12 +217,12 @@ class DownloadQueue:
             elif content_type == 'thread':
                 # For threads, try both approaches
                 logger.info(f"Attempting thread download: {request.url}")
-                filename, title = await self.video_downloader.download_video(request.url, request.quality)
+                filename, title, error = await self.video_downloader.download_video(request.url, request.quality)
                 if filename:
                     downloader = self.video_downloader
                     final_content_type = 'thread'
                 else:
-                    filename, title = await self.image_downloader.download_image(request.url)
+                    filename, title, error = await self.image_downloader.download_image(request.url)
                     if filename:
                         downloader = self.image_downloader
                         final_content_type = 'thread'
@@ -230,12 +230,12 @@ class DownloadQueue:
             else:
                 # For unknown content, try both approaches
                 logger.info(f"Unknown content type, trying both approaches: {request.url}")
-                filename, title = await self.image_downloader.download_image(request.url)
+                filename, title, error = await self.image_downloader.download_image(request.url)
                 if filename:
                     downloader = self.image_downloader
                     final_content_type = 'image'
                 else:
-                    filename, title = await self.video_downloader.download_video(request.url, request.quality)
+                    filename, title, error = await self.video_downloader.download_video(request.url, request.quality)
                     if filename:
                         downloader = self.video_downloader
                         final_content_type = 'video'

@@ -170,6 +170,13 @@ class PlatformHandler:
                 # Extract info without downloading
                 info = await asyncio.to_thread(ydl.extract_info, url, download=False)
                 
+                logger.info(f"yt-dlp extraction completed for {url}")
+                logger.info(f"Info type: {type(info)}")
+                if isinstance(info, dict):
+                    logger.info(f"Info keys: {list(info.keys())}")
+                    if 'error' in info:
+                        logger.error(f"yt-dlp returned error in info: {info.get('error')}")
+                
                 if not info:
                     logger.warning(f"No info extracted from {url}")
                     return {
@@ -180,16 +187,33 @@ class PlatformHandler:
                     }
                 
                 # Analyze content type and metadata
-                content_analysis = self._analyze_content(info, platform)
+                try:
+                    content_analysis = self._analyze_content(info, platform)
+                    logger.info(f"Content analysis completed successfully")
+                except Exception as analysis_error:
+                    logger.error(f"Error in _analyze_content: {type(analysis_error).__name__}: {analysis_error}")
+                    logger.exception("Full analysis error traceback:")
+                    raise
                 
                 # Check content policies
-                if not self._check_content_policies(info, content_analysis):
+                try:
+                    policies_ok = self._check_content_policies(info, content_analysis)
+                    logger.info(f"Content policies check result: {policies_ok}")
+                except Exception as policy_error:
+                    logger.error(f"Error in _check_content_policies: {type(policy_error).__name__}: {policy_error}")  
+                    logger.exception("Full policy error traceback:")
+                    raise
+                    
+                if not policies_ok:
                     return {
                         'success': False,
                         'error': 'Content violates policies',
                         'platform': platform,
                         'reason': 'policy_violation'
                     }
+                
+                logger.info("Building success response dict...")
+                logger.info(f"content_analysis keys: {list(content_analysis.keys())}")
                 
                 return {
                     'success': True,
@@ -209,8 +233,13 @@ class PlatformHandler:
                 
         except Exception as e:
             error_msg = str(e)
-            logger.error(f"Error getting content info for {url}: {error_msg}")
-            logger.error(f"Error type: {type(e).__name__}")
+            logger.error(f"Exception caught in get_content_info:")
+            logger.error(f"  URL: {url}")
+            logger.error(f"  Platform: {platform}")
+            logger.error(f"  Error type: {type(e).__name__}")
+            logger.error(f"  Error message: {error_msg}")
+            logger.error(f"  Error repr: {repr(e)}")
+            logger.exception("Full traceback:")  # This will log the full stack trace
             
             # Handle platform-specific errors
             return self._handle_platform_error(url, platform, error_msg)

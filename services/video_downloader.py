@@ -57,11 +57,14 @@ class VideoDownloader:
             'postprocessors': [],
             'writesubtitles': False,
             'writeautomaticsub': False,
-            'ignoreerrors': False,
+            'ignoreerrors': True,  # Don't abort on errors
             'no_color': True,
             'geo_bypass': True,
-            'geo_bypass_country': 'US'
+            'geo_bypass_country': 'US',
+            # Prefer formats that don't need merging (important when ffmpeg is missing)
+            'format_sort': ['hasaud', 'hasvid', 'ext:mp4:m4a'],  # Prefer single-file formats
         }
+
         
         # Platform-specific format selection with enhanced quality options
         if quality == 'small':
@@ -99,8 +102,14 @@ class VideoDownloader:
                 'Upgrade-Insecure-Requests': '1',
             }
         else:
-            # Default quality setting
-            ydl_opts['format'] = quality
+            # Default quality setting - prefer formats that don't need merging (no ffmpeg required)
+            # This handles YouTube Shorts and other content where ffmpeg might not be available
+            if quality.startswith('best'):
+                # For 'best' or 'best[height<=X]' type formats, add fallback to merged formats
+                ydl_opts['format'] = f'{quality}/bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best'
+            else:
+                ydl_opts['format'] = quality
+
         
         try:
             # Create yt-dlp instance
@@ -140,6 +149,50 @@ class VideoDownloader:
                 return None, info.get('title', 'Unknown'), f"File too large ({file_size} bytes, max {self.max_file_size})"
             
             return str(downloaded_file), info.get('title', 'Unknown'), None
+            
+        except yt_dlp.utils.DownloadError as e:
+            error_msg = str(e)
+            # If format not available or ffmpeg not installed, retry with format 18 (360p single-stream MP4)
+            if ("Requested format is not available" in error_msg or "ffmpeg" in error_msg.lower()):
+                logger.warning(f"Format issue detected, retrying with format 18 (360p MP4 - no ffmpeg needed)")
+                try:
+                    # Format 18 is 360p MP4 with audio - doesn't need merging
+                    ydl_opts['format'] = '18/worst'  # Fallback to worst if 18 not available
+                    
+                    ydl = yt_dlp.YoutubeDL(ydl_opts)
+                    
+                    # Re-extract info with new options
+                    info = await asyncio.get_event_loop().run_in_executor(
+                        None, ydl.extract_info, url, False
+                    )
+                    
+                    if info:
+                        result = await asyncio.get_event_loop().run_in_executor(
+                            None, ydl.download, [url]
+                        )
+                        
+                        if result == 0:
+                            # Find the downloaded file
+                            downloaded_file = None
+                            for file in self.download_path.iterdir():
+                                if file.is_file() and platform in file.name:
+                                    downloaded_file = file
+                                    break
+                            
+                            if downloaded_file and downloaded_file.exists():
+                                # Check file size
+                                file_size = downloaded_file.stat().st_size
+                                if file_size > self.max_file_size:
+                                    downloaded_file.unlink()
+                                    return None, info.get('title', 'Unknown'), f"File too large ({file_size} bytes, max {self.max_file_size})"
+                                
+                                logger.info(f"Successfully downloaded with format 18: {downloaded_file}")
+                                return str(downloaded_file), info.get('title', 'Unknown'), None
+                except Exception as retry_error:
+                    logger.error(f"Retry with format 18 also failed: {retry_error}")
+            
+            logger.error(f"Error downloading video from {platform}: {e}")
+            return None, "Unknown", str(e)
             
         except Exception as e:
             logger.error(f"Error downloading video from {platform}: {e}")

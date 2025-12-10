@@ -92,22 +92,22 @@ class VideoDownloaderCog(BaseCommand):
                         }
                     ]
                 )
-                await self.send_embed(ctx, embed, auto_delete=True, delete_delay=30)
-                return
-            else:
-                embed = EmbedBuilder.error(
-                    title="URL Validation Failed",
-                    description=validation.get('error', 'Unknown validation error'),
-                    fields=[
-                        {
-                            'name': 'Supported Platforms',
-                            'value': "Use `!platform-help` to see all supported platforms and their limitations",
-                            'inline': False
-                        }
-                    ]
-                )
-                await self.send_embed(ctx, embed, auto_delete=True, delete_delay=20)
-                return
+                    await self.send_embed(ctx, embed, auto_delete=True, delete_delay=30)
+                    return
+                else:
+                    embed = EmbedBuilder.error(
+                        title="URL Validation Failed",
+                        description=validation.get('error', 'Unknown validation error'),
+                        fields=[
+                            {
+                                'name': 'Supported Platforms',
+                                'value': "Use `!platform-help` to see all supported platforms and their limitations",
+                                'inline': False
+                            }
+                        ]
+                    )
+                    await self.send_embed(ctx, embed, auto_delete=True, delete_delay=20)
+                    return
             
             # If we get here, validation was successful, proceed with download
             self.logger.info(f"URL validation successful for {url}, proceeding with download")
@@ -131,6 +131,10 @@ class VideoDownloaderCog(BaseCommand):
         # Get content information using platform handler
         try:
             content_info = await self.platform_handler.get_content_info(url)
+            self.logger.info(f"Received content_info: type={type(content_info)}, keys={list(content_info.keys()) if isinstance(content_info, dict) else 'N/A'}")
+            self.logger.info(f"content_info['success'] = {content_info.get('success')}")
+            if 'error' in content_info:
+                self.logger.info(f"content_info['error'] = {content_info['error']}")
             if not content_info['success']:
                 # Handle different error types with appropriate messages
                 if content_info.get('reason') == 'private_content':
@@ -150,103 +154,104 @@ class VideoDownloaderCog(BaseCommand):
                         }
                     ]
                 )
-                await self.send_embed(ctx, embed, auto_delete=True, delete_delay=30)
-                return
-            elif content_info.get('reason') == 'technical_limitation':
-                embed = EmbedBuilder.error(
-                    title="Technical Limitation",
-                    description=content_info['error'],
-                    fields=[
-                        {
-                            'name': 'Details',
-                            'value': content_info.get('details', 'The content could not be processed due to technical limitations.'),
-                            'inline': False
-                        },
-                        {
-                            'name': 'What to Try',
-                            'value': "• Try the download again later\n• Check if the content is still available\n• Try a different post from the same user\n• Use `!platform-help facebook` for more information",
-                            'inline': False
-                        }
-                    ]
-                )
-                await self.send_embed(ctx, embed, auto_delete=True, delete_delay=30)
-                return
-            elif content_info.get('reason') == 'unsupported_format':
-                embed = EmbedBuilder.error(
-                    title="Unsupported Format",
-                    description=content_info['error'],
-                    fields=[
-                        {
-                            'name': 'Details',
-                            'value': content_info.get('details', 'This content uses a format that is not currently supported.'),
-                            'inline': False
-                        },
-                        {
-                            'name': 'What to Try',
-                            'value': "• Try a different post from the same platform\n• The format may be supported in future updates\n• Use `!platform-help` for platform-specific guidance",
-                            'inline': False
-                        }
-                    ]
-                )
-                await self.send_embed(ctx, embed, auto_delete=True, delete_delay=30)
-                return
-            elif content_info.get('reason') == 'rate_limited':
-                embed = EmbedBuilder.error(
-                    title="Rate Limited",
-                    description=content_info['error'],
-                    fields=[
-                        {
-                            'name': 'Details',
-                            'value': content_info.get('details', 'The platform is temporarily blocking requests due to rate limiting.'),
-                            'inline': False
-                        },
-                        {
-                            'name': 'What to Try',
-                            'value': "• Wait a few minutes and try again\n• Try a different URL from the same platform\n• The platform may be experiencing high traffic\n• Try again later when traffic is lower",
-                            'inline': False
-                        }
-                    ]
-                )
-                await self.send_embed(ctx, embed, auto_delete=True, delete_delay=30)
-                return
-            elif content_info.get('reason') == 'content_unavailable':
-                embed = EmbedBuilder.error(
-                    title="Content Unavailable",
-                    description=content_info['error'],
-                    fields=[
-                        {
-                            'name': 'Details',
-                            'value': content_info.get('details', 'The requested content cannot be accessed.'),
-                            'inline': False
-                        },
-                        {
-                            'name': 'What to Try',
-                            'value': "• Check if the URL is correct\n• The content may have been deleted or made private\n• Try a different URL from the same platform\n• The content may be region-restricted",
-                            'inline': False
-                        }
-                    ]
-                )
-                await self.send_embed(ctx, embed, auto_delete=True, delete_delay=30)
-                return
-            else:
-                embed = EmbedBuilder.error(
-                    title="Content Analysis Failed",
-                    description=content_info['error'],
-                    fields=[
-                        {
-                            'name': 'Possible Reasons',
-                            'value': "• Content may have been deleted\n• Content requires authentication\n• Content violates platform policies\n• Temporary technical issues",
-                            'inline': False
-                        },
-                        {
-                            'name': 'What to Try',
-                            'value': "• Check if the content is still available\n• Try a different URL from the same platform\n• Use `!platform-help` for platform-specific guidance\n• Try again later",
-                            'inline': False
-                        }
-                    ]
-                )
-                await self.send_embed(ctx, embed, auto_delete=True, delete_delay=30)
-                return
+                    await self.send_embed(ctx, embed, auto_delete=True, delete_delay=30)
+                    return
+                elif content_info.get('reason') == 'technical_limitation':
+                    embed = EmbedBuilder.error(
+                        title="Technical Limitation",
+                        description=content_info['error'],
+                        fields=[
+                            {
+                                'name': 'Details',
+                                'value': content_info.get('details', 'The content could not be processed due to technical limitations.'),
+                                'inline': False
+                            },
+                            {
+                                'name': 'What to Try',
+                                'value': "• Try the download again later\n• Check if the content is still available\n• Try a different post from the same user\n• Use `!platform-help facebook` for more information",
+                                'inline': False
+                            }
+                        ]
+                    )
+                    await self.send_embed(ctx, embed, auto_delete=True, delete_delay=30)
+                    return
+                elif content_info.get('reason') == 'unsupported_format':
+                    embed = EmbedBuilder.error(
+                        title="Unsupported Format",
+                        description=content_info['error'],
+                        fields=[
+                            {
+                                'name': 'Details',
+                                'value': content_info.get('details', 'This content uses a format that is not currently supported.'),
+                                'inline': False
+                            },
+                            {
+                                'name': 'What to Try',
+                                'value': "• Try a different post from the same platform\n• The format may be supported in future updates\n• Use `!platform-help` for platform-specific guidance",
+                                'inline': False
+                            }
+                        ]
+                    )
+                    await self.send_embed(ctx, embed, auto_delete=True, delete_delay=30)
+                    return
+                elif content_info.get('reason') == 'rate_limited':
+                    embed = EmbedBuilder.error(
+                        title="Rate Limited",
+                        description=content_info['error'],
+                        fields=[
+                            {
+                                'name': 'Details',
+                                'value': content_info.get('details', 'The platform is temporarily blocking requests due to rate limiting.'),
+                                'inline': False
+                            },
+                            {
+                                'name': 'What to Try',
+                                'value': "• Wait a few minutes and try again\n• Try a different URL from the same platform\n• The platform may be experiencing high traffic\n• Try again later when traffic is lower",
+                                'inline': False
+                            }
+                        ]
+                    )
+                    await self.send_embed(ctx, embed, auto_delete=True, delete_delay=30)
+                    return
+                elif content_info.get('reason') == 'content_unavailable':
+                    embed = EmbedBuilder.error(
+                        title="Content Unavailable",
+                        description=content_info['error'],
+                        fields=[
+                            {
+                                'name': 'Details',
+                                'value': content_info.get('details', 'The requested content cannot be accessed.'),
+                                'inline': False
+                            },
+                            {
+                                'name': 'What to Try',
+                                'value': "• Check if the URL is correct\n• The content may have been deleted or made private\n• Try a different URL from the same platform\n• The content may be region-restricted",
+                                'inline': False
+                            }
+                        ]
+                    )
+                    await self.send_embed(ctx, embed, auto_delete=True, delete_delay=30)
+                    return
+                else:
+                    # Generic error fallback for unhandled error reasons
+                    embed = EmbedBuilder.error(
+                        title="Content Analysis Failed",
+                        description=content_info.get('error', 'Unknown error occurred'),
+                        fields=[
+                            {
+                                'name': 'Possible Reasons',
+                                'value': "• Content may have been deleted\n• Content requires authentication\n• Content violates platform policies\n• Temporary technical issues",
+                                'inline': False
+                            },
+                            {
+                                'name': 'What to Try',
+                                'value': "• Check if the content is still available\n• Try a different URL from the same platform\n• Use `!platform-help` for platform-specific guidance\n• Try again later",
+                                'inline': False
+                            }
+                        ]
+                    )
+                    await self.send_embed(ctx, embed, auto_delete=True, delete_delay=30)
+                    return
         except Exception as e:
             self.logger.error(f"Error getting content info for {url}: {e}")
             embed = EmbedBuilder.error(

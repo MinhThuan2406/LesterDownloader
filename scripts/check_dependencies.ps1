@@ -24,7 +24,7 @@ else {
 Write-Host ""
 
 # Function to check package version
-function Check-Package {
+function Test-Package {
     param($PackageName, $MinVersion)
     
     $installed = pip show $PackageName 2>$null
@@ -46,22 +46,22 @@ Write-Host ""
 $allInstalled = $true
 
 Write-Host "Discord Framework:" -ForegroundColor Cyan
-$allInstalled = $allInstalled -and (Check-Package "discord.py" "2.5.2")
+$allInstalled = $allInstalled -and (Test-Package "discord.py" "2.5.2")
 
 Write-Host "`nVideo Downloading:" -ForegroundColor Cyan
-$allInstalled = $allInstalled -and (Check-Package "yt-dlp" "2025.12.8")
+$allInstalled = $allInstalled -and (Test-Package "yt-dlp" "2025.12.8")
 
 Write-Host "`nSSL Support:" -ForegroundColor Cyan
-$allInstalled = $allInstalled -and (Check-Package "certifi" "2024.12.14")
+$allInstalled = $allInstalled -and (Test-Package "certifi" "2024.12.14")
 
 Write-Host "`nHTTP Libraries:" -ForegroundColor Cyan
-$allInstalled = $allInstalled -and (Check-Package "aiohttp" "3.9.1")
-$allInstalled = $allInstalled -and (Check-Package "requests" "2.32.4")
+$allInstalled = $allInstalled -and (Test-Package "aiohttp" "3.9.1")
+$allInstalled = $allInstalled -and (Test-Package "requests" "2.32.4")
 
 Write-Host "`nUtilities:" -ForegroundColor Cyan
-$allInstalled = $allInstalled -and (Check-Package "python-dotenv" "1.1.1")
-$allInstalled = $allInstalled -and (Check-Package "aiosqlite" "0.20.0")
-$allInstalled = $allInstalled -and (Check-Package "aiofiles" "24.1.0")
+$allInstalled = $allInstalled -and (Test-Package "python-dotenv" "1.1.1")
+$allInstalled = $allInstalled -and (Test-Package "aiosqlite" "0.20.0")
+$allInstalled = $allInstalled -and (Test-Package "aiofiles" "24.1.0")
 
 Write-Host ""
 Write-Host "================================" -ForegroundColor Cyan
